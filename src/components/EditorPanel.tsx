@@ -1,35 +1,22 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { getArticleById, addArticle, updateArticle } from '../store';
-import { CATEGORIES, Category, CATEGORY_ICONS } from '../types';
+import { useState } from 'react';
+import { Article, CATEGORIES, Category, CATEGORY_ICONS } from '../types';
 
-export default function Editor() {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const isEditing = Boolean(id);
+interface EditorPanelProps {
+  article: Article | null;
+  onSave: (data: { title: string; content: string; category: Category; tags: string[]; isPinned: boolean }) => void;
+  onCancel: () => void;
+}
 
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [category, setCategory] = useState<Category>('عام');
-  const [tagsInput, setTagsInput] = useState('');
-  const [isPinned, setIsPinned] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+export default function EditorPanel({ article, onSave, onCancel }: EditorPanelProps) {
+  const [title, setTitle] = useState(article?.title || '');
+  const [content, setContent] = useState(article?.content || '');
+  const [category, setCategory] = useState<Category>(article?.category || 'عام');
+  const [tagsInput, setTagsInput] = useState(article?.tags.join('، ') || '');
+  const [isPinned, setIsPinned] = useState(article?.isPinned || false);
   const [showPreview, setShowPreview] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
-  useEffect(() => {
-    if (id) {
-      const article = getArticleById(id);
-      if (article) {
-        setTitle(article.title);
-        setContent(article.content);
-        setCategory(article.category);
-        setTagsInput(article.tags.join('، '));
-        setIsPinned(article.isPinned);
-      } else {
-        navigate('/dashboard');
-      }
-    }
-  }, [id, navigate]);
+  const isEditing = Boolean(article);
 
   const handleSave = () => {
     if (!title.trim()) {
@@ -48,23 +35,16 @@ export default function Editor() {
       .map(t => t.trim())
       .filter(t => t.length > 0);
 
-    const articleData = {
-      title: title.trim(),
-      content,
-      category,
-      tags,
-      isPinned,
-    };
-
     setTimeout(() => {
-      if (isEditing && id) {
-        updateArticle(id, articleData);
-      } else {
-        addArticle(articleData);
-      }
+      onSave({
+        title: title.trim(),
+        content,
+        category,
+        tags,
+        isPinned,
+      });
       setIsSaving(false);
-      navigate('/dashboard');
-    }, 300);
+    }, 200);
   };
 
   return (
@@ -81,14 +61,14 @@ export default function Editor() {
           </p>
         </div>
         <button
-          onClick={() => navigate('/dashboard')}
-          className="text-stone-500 hover:text-stone-700 transition-colors"
+          onClick={onCancel}
+          className="p-2 rounded-lg hover:bg-stone-200 text-stone-500 transition-colors"
         >
           <i className="fas fa-times text-xl"></i>
         </button>
       </div>
 
-      {/* Editor */}
+      {/* Editor Card */}
       <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden">
         {/* Title */}
         <div className="p-6 border-b border-stone-100">
@@ -98,6 +78,7 @@ export default function Editor() {
             onChange={(e) => setTitle(e.target.value)}
             placeholder="عنوان المقال..."
             className="w-full text-2xl font-bold text-stone-800 placeholder-stone-300 focus:outline-none"
+            autoFocus
           />
         </div>
 
@@ -184,7 +165,7 @@ export default function Editor() {
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="اكتب مقالك هنا... يمكنك استخدام تنسيق Markdown:
+              placeholder={`اكتب مقالك هنا... يمكنك استخدام تنسيق Markdown:
 
 # عنوان رئيسي
 ## عنوان فرعي
@@ -193,12 +174,12 @@ export default function Editor() {
 - قائمة نقطية
 1. قائمة مرقمة
 > اقتباس
-`كود`"
+\`كود\``}
               className="w-full h-96 px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl text-stone-700 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300 resize-none font-mono text-sm leading-relaxed"
               dir="rtl"
             />
             {showPreview && (
-              <div className="h-96 overflow-auto p-4 bg-white border border-stone-200 rounded-xl prose prose-sm prose-stone max-w-none" dir="rtl">
+              <div className="h-96 overflow-auto p-4 bg-white border border-stone-200 rounded-xl" dir="rtl">
                 {content ? (
                   <div className="whitespace-pre-wrap text-stone-600 text-sm leading-relaxed">
                     {content.split('\n').map((line, i) => {
@@ -206,7 +187,7 @@ export default function Editor() {
                       if (line.startsWith('## ')) return <h2 key={i} className="text-lg font-bold text-stone-700 mb-2">{line.slice(3)}</h2>;
                       if (line.startsWith('### ')) return <h3 key={i} className="text-base font-bold text-stone-700 mb-1">{line.slice(4)}</h3>;
                       if (line.startsWith('> ')) return <blockquote key={i} className="border-r-4 border-indigo-300 pr-3 py-1 my-1 bg-indigo-50 rounded-l text-stone-600 italic">{line.slice(2)}</blockquote>;
-                      if (line.startsWith('- ')) return <li key={i} className="list-disc mr-4 text-stone-600">{line.slice(2)}</li>;
+                      if (line.startsWith('- ') || line.startsWith('* ')) return <li key={i} className="list-disc mr-4 text-stone-600">{line.slice(2)}</li>;
                       if (line.match(/^\d+\. /)) return <li key={i} className="list-decimal mr-4 text-stone-600">{line.replace(/^\d+\. /, '')}</li>;
                       if (line.trim() === '') return <br key={i} />;
                       return <p key={i} className="text-stone-600 mb-1">{line}</p>;
@@ -233,7 +214,7 @@ export default function Editor() {
         {/* Actions */}
         <div className="p-6 bg-stone-50 border-t border-stone-100 flex items-center justify-between">
           <button
-            onClick={() => navigate('/dashboard')}
+            onClick={onCancel}
             className="px-6 py-2.5 text-stone-600 hover:text-stone-800 font-medium transition-colors"
           >
             إلغاء

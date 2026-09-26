@@ -1,17 +1,12 @@
-import { Link } from 'react-router-dom';
 import { Article, CATEGORY_COLORS, CATEGORY_ICONS } from '../types';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 
 interface ArticleCardProps {
   article: Article;
-  showActions?: boolean;
-  onEdit?: (id: string) => void;
-  onDelete?: (id: string) => void;
-  onTogglePin?: (id: string) => void;
 }
 
-export default function ArticleCard({ article, showActions, onEdit, onDelete, onTogglePin }: ArticleCardProps) {
+export default function ArticleCard({ article }: ArticleCardProps) {
   const excerpt = article.content
     .replace(/[#*`>\-\[\]()!]/g, '')
     .replace(/\n/g, ' ')
@@ -34,47 +29,17 @@ export default function ArticleCard({ article, showActions, onEdit, onDelete, on
               </span>
             )}
           </div>
-          
-          {showActions && (
-            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button
-                onClick={() => onTogglePin?.(article.id)}
-                className="p-1.5 rounded-lg hover:bg-amber-50 text-stone-400 hover:text-amber-600 transition-colors"
-                title={article.isPinned ? 'إلغاء التثبيت' : 'تثبيت'}
-              >
-                <i className={`fas fa-thumbtack text-sm ${article.isPinned ? 'text-amber-500' : ''}`}></i>
-              </button>
-              <button
-                onClick={() => onEdit?.(article.id)}
-                className="p-1.5 rounded-lg hover:bg-blue-50 text-stone-400 hover:text-blue-600 transition-colors"
-                title="تعديل"
-              >
-                <i className="fas fa-edit text-sm"></i>
-              </button>
-              <button
-                onClick={() => onDelete?.(article.id)}
-                className="p-1.5 rounded-lg hover:bg-red-50 text-stone-400 hover:text-red-600 transition-colors"
-                title="حذف"
-              >
-                <i className="fas fa-trash text-sm"></i>
-              </button>
-            </div>
-          )}
         </div>
 
         {/* Title */}
-        <Link to={`/article/${article.id}`} className="block">
-          <h2 className="text-lg font-bold text-stone-800 group-hover:text-indigo-600 transition-colors mb-2 line-clamp-2">
-            {article.title}
-          </h2>
-        </Link>
+        <h2 className="text-lg font-bold text-stone-800 group-hover:text-indigo-600 transition-colors mb-2 line-clamp-2">
+          {article.title}
+        </h2>
 
         {/* Excerpt */}
-        <Link to={`/article/${article.id}`} className="block">
-          <p className="text-stone-500 text-sm leading-relaxed line-clamp-3 mb-4">
-            {excerpt}
-          </p>
-        </Link>
+        <p className="text-stone-500 text-sm leading-relaxed line-clamp-3 mb-4">
+          {excerpt}
+        </p>
 
         {/* Tags */}
         {article.tags.length > 0 && (
@@ -98,12 +63,9 @@ export default function ArticleCard({ article, showActions, onEdit, onDelete, on
             <i className="far fa-calendar-alt ml-1"></i>
             {date}
           </span>
-          <Link
-            to={`/article/${article.id}`}
-            className="text-xs text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
-          >
+          <span className="text-xs text-indigo-600 font-medium">
             اقرأ المزيد ←
-          </Link>
+          </span>
         </div>
       </div>
     </article>
